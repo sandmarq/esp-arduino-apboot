@@ -11,12 +11,6 @@ WiFiServer server(80);
 const char* ssid = "BUBBLES";
 String st;
 
-// this is a 5h test
-int testWifi(void);
-void launchWeb(int webtype);
-void setupAP(void);
-int mdns1(int webtype);
-
 void setup() {
   Serial.begin(115200);
   EEPROM.begin(512);
