@@ -11,7 +11,6 @@ WiFiServer server(80);
 const char* ssid = "BUBBLES";
 String st;
 
-//correction
 int testWifi(void);
 void launchWeb(int webtype);
 void setupAP(void);
