@@ -8,7 +8,7 @@
 MDNSResponder mdns;
 WiFiServer server(80);
 
-const char* ssid = "BUBBLES";
+const char* ssid = "HUZZAH";
 String st;
 
 void setup() {
@@ -24,6 +24,8 @@ void setup() {
   for (int i = 0; i < 32; ++i)
     {
       esid += char(EEPROM.read(i));
+      if( esid[i]==0xFF || esid[i]==0 )
+        break;
     }
   Serial.print("SSID: ");
   Serial.println(esid);
@@ -32,6 +34,8 @@ void setup() {
   for (int i = 32; i < 96; ++i)
     {
       epass += char(EEPROM.read(i));
+      if( epass[i-32]==0xFF || epass[i-32]==0 )
+        break;
     }
   Serial.print("PASS: ");
   Serial.println(epass);
@@ -61,16 +65,18 @@ int testWifi(void) {
 
 void launchWeb(int webtype) {
           Serial.println("");
-          Serial.println("WiFi connected");
-          Serial.println(WiFi.localIP());
-          Serial.println(WiFi.softAPIP());
-          if (!mdns.begin("esp8266", WiFi.localIP())) {
-            Serial.println("Error setting up MDNS responder!");
-            while(1) {
-              delay(1000);
+          if( webtype==0 ){
+            Serial.println("WiFi connected");
+            Serial.println(WiFi.localIP());
+            if (!mdns.begin("myhuzzah")) {
+              Serial.println("Error setting up MDNS responder!");
+              while(1) {
+                delay(1000);
+              }
             }
-          }
-          Serial.println("mDNS responder started");
+            Serial.println("mDNS responder started");
+          } else
+            Serial.println(WiFi.softAPIP());
           // Start the server
           server.begin();
           Serial.println("Server started");
@@ -124,7 +130,6 @@ void setupAP(void) {
     }
   st += "</ul>";
   delay(100);
-  WiFi.mode(WIFI_AP);
   WiFi.softAP(ssid);
   Serial.println("softap");
   Serial.println("");
@@ -134,8 +139,9 @@ void setupAP(void) {
 
 int mdns1(int webtype)
 {
-  // Check for any mDNS queries and send responses
-  mdns.update();
+  if( webtype==0 )
+    // Check for any mDNS queries and send responses
+    mdns.update();
 
   // Check if a client has connected
   WiFiClient client = server.available();
@@ -168,19 +174,7 @@ int mdns1(int webtype)
   client.flush();
   String s;
   if ( webtype == 1 ) {
-      if (req == "/")
-      {
-        IPAddress ip = WiFi.softAPIP();
-        String ipStr = String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
-        s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>Hello from ESP8266 at ";
-        s += ipStr;
-        s += "<p>";
-        s += st;
-        s += "<form method='get' action='a'><label>SSID: </label><input name='ssid' length=32><input name='pass' length=64><input type='submit'></form>";
-        s += "</html>\r\n\r\n";
-        Serial.println("Sending 200");
-      }
-      else if ( req.startsWith("/a?ssid=") ) {
+      if ( req.startsWith("/a?ssid=") ) {
         // /a?ssid=blahhhh&pass=poooo
         Serial.println("clearing eeprom");
         for (int i = 0; i < 96; ++i) { EEPROM.write(i, 0); }
@@ -210,13 +204,20 @@ int mdns1(int webtype)
         EEPROM.commit();
         s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>Hello from ESP8266 ";
         s += "Found ";
-        s += urldecode(req);
-        s += "<p> saved to eeprom... reset to boot into new wifi</html>\r\n\r\n";
+        s += req;
+        s += "<p> saved to eeprom... reset to boot into new wifi... reboot in 5 secondes</html>\r\n\r\n";
       }
       else
       {
-        s = "HTTP/1.1 404 Not Found\r\n\r\n";
-        Serial.println("Sending 404");
+        IPAddress ip = WiFi.softAPIP();
+        String ipStr = String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
+        s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>Hello from ESP8266 at ";
+        s += ipStr;
+        s += "<p>";
+        s += st;
+        s += "<form method='get' action='a'><label>SSID: </label><input name='ssid' length=32><label>PASS: </label><input name='pass' length=64><input type='submit'></form>";
+        s += "</html>\r\n\r\n";
+        Serial.println("Sending 200");
       }
   }
   else
@@ -247,7 +248,6 @@ int mdns1(int webtype)
   Serial.println("Done with client");
   return(20);
 }
-
 
 // Simple URL decode
 String urldecode(String encoded)
