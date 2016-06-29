@@ -185,11 +185,11 @@ int mdns1(int webtype)
         Serial.println("clearing eeprom");
         for (int i = 0; i < 96; ++i) { EEPROM.write(i, 0); }
         String qsid;
-        qsid = req.substring(8,req.indexOf('&'));
+        qsid = urldecode(req.substring(8,req.indexOf('&')));
         Serial.println(qsid);
         Serial.println("");
         String qpass;
-        qpass = req.substring(req.lastIndexOf('=')+1);
+        qpass = urldecode(req.substring(req.lastIndexOf('=')+1));
         Serial.println(qpass);
         Serial.println("");
 
@@ -210,7 +210,7 @@ int mdns1(int webtype)
         EEPROM.commit();
         s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>Hello from ESP8266 ";
         s += "Found ";
-        s += req;
+        s += urldecode(req);
         s += "<p> saved to eeprom... reset to boot into new wifi</html>\r\n\r\n";
       }
       else
@@ -249,6 +249,41 @@ int mdns1(int webtype)
 }
 
 
+// Simple URL decode
+String urldecode(String encoded)
+{
+  char buff[ encoded.length() ];
+  char *out = buff;
+  const char *in = encoded.c_str();
+  char a,b;
+  while( *in ){
+    if ((*in == '%') &&
+      ((a = in[1]) && (b = in[2])) &&
+      (isxdigit(a) && isxdigit(b))) {
+      if (a >= 'a')
+        a += 10 - 'a';
+      else if (a >= 'A')
+        a += 10 - 'A';
+      else
+        a -= '0';
+      if (b >= 'a')
+        b += 10 - 'a';
+      else if (b >= 'A')
+        b += 10 - 'A';
+      else
+        b -= '0';
+      *out++ = 16*a+b;
+      in+=3;
+    } else if ( *in=='+' ){
+      *out++ = ' ';
+      *in++;
+    } else {
+      *out++ = *in++;
+    }
+  }
+  *out = '\0';
+  return String(buff);
+}
 
 void loop() {
   // put your main code here, to run repeatedly:
