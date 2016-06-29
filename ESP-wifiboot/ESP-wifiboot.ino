@@ -124,6 +124,7 @@ void setupAP(void) {
     }
   st += "</ul>";
   delay(100);
+  WiFi.mode(WIFI_AP);
   WiFi.softAP(ssid);
   Serial.println("softap");
   Serial.println("");
