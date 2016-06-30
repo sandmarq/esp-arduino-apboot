@@ -8,7 +8,8 @@
 MDNSResponder mdns;
 WiFiServer server(80);
 
-const char* ssid = "HUZZAH";
+const char* ssid = "ESP8266-Setup";
+const char* password = "thisisatest";
 String st;
 
 void setup() {
@@ -130,7 +131,7 @@ void setupAP(void) {
     }
   st += "</ul>";
   delay(100);
-  WiFi.softAP(ssid);
+  WiFi.softAP(ssid, password);
   Serial.println("softap");
   Serial.println("");
   launchWeb(1);
@@ -205,7 +206,7 @@ int mdns1(int webtype)
         s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>Hello from ESP8266 ";
         s += "Found ";
         s += req;
-        s += "<p> saved to eeprom... reset to boot into new wifi... reboot in 5 secondes</html>\r\n\r\n";
+        s += "<p> saved to eeprom... reset the ESP8266 to boot into new wifi...</html>\r\n\r\n";
       }
       else
       {
@@ -224,7 +225,7 @@ int mdns1(int webtype)
   {
       if (req == "/")
       {
-        s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>Hello from ESP8266";
+        s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>Hello Laurie from ESP8266";
         s += "<p>";
         s += "</html>\r\n\r\n";
         Serial.println("Sending 200");
